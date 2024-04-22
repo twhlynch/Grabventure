@@ -1,0 +1,64 @@
+html, body, menu, canvas{
+    padding: 0;
+    margin: 0;
+    max-height: 100vh;
+    overflow: hidden;
+}
+body {
+    display: flex;
+    flex-direction: row;
+    height: 100vh;
+}
+#main-controls {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    align-items: center;
+    flex-direction: row;
+    width: calc(100svw - 40px);
+    height: fit-content;
+    position: fixed;
+    top: 0;
+    right: 0;
+    padding: 20px;
+    z-index: 10;
+}
+menu button {
+    width: 50px;
+    height: 50px;
+    margin: 0;
+    cursor: pointer;
+    padding: 12px 6px;
+    border: 1px solid rgb(255, 255, 255);
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.1);
+    color: rgb(255, 255, 255);
+    font: 13px sans-serif;
+    text-align: center;
+    opacity: 0.5;
+    outline: none;
+    display: none;
+}
+menu svg {
+    height: 24px;
+    width: 24px;
+}
+div#crosshair {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 4;
+    height: 4;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 10;
+    border-radius: 4px;
+    pointer-events: none;
+    transform: translate(-2px, -2px);
+}
+@media screen and (orientation: landscape) {
+    #controls {
+        flex-direction: column;
+        width: fit-content;
+        height: calc(100svh - 40px);
+    }
+}
