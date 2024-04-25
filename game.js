@@ -420,6 +420,29 @@ async function init() {
     window.addEventListener( 'mousedown', onWindowClick );
     window.addEventListener( 'mouseup', onWindowRelease );
 
+    let startPos = {
+        x: 0,
+        y: 0
+    };
+    renderer.domElement.addEventListener( 'touchstart', (event) => {
+        startPos.x = event.touches[0].clientX;
+        startPos.y = event.touches[0].clientY;
+    });
+    renderer.domElement.addEventListener( 'touchmove', (event) => {
+        let endPos = {
+            x: event.touches[0].clientX,
+            y: event.touches[0].clientY
+        };
+        let diff = {
+            x: endPos.x - startPos.x,
+            y: endPos.y - startPos.y
+        };
+        startPos = endPos;
+        // rotate camera
+        controls.getObject().rotation.y -= diff.x * 0.01;
+        controls.getObject().rotation.x -= diff.y * 0.01;
+    });
+
     raycaster = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 0, - 1, 0 ), 0, playerHeight );
 
     let randomButton = document.getElementById("randomButton");
