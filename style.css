@@ -1,7 +1,7 @@
 html, body, menu, canvas{
     padding: 0;
     margin: 0;
-    max-height: 100vh;
+    max-height: 100svh;
     overflow: hidden;
 }
 body {
@@ -23,6 +23,31 @@ body {
     padding: 20px;
     z-index: 10;
 }
+#mobile-controls {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(3, 1fr);
+    justify-content: center;
+    align-items: center;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    padding: 20px;
+    z-index: 10;
+    display: none;
+}
+#jump-controls {
+    display: grid;
+    gap: 10px;
+    justify-content: center;
+    align-items: center;
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    padding: 20px;
+    z-index: 10;
+    display: none;
+}
 menu button {
     width: 50px;
     height: 50px;
@@ -37,7 +62,6 @@ menu button {
     text-align: center;
     opacity: 0.5;
     outline: none;
-    display: none;
 }
 menu svg {
     height: 24px;

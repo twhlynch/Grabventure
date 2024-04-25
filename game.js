@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
+import { PointerLockControls } from './PointerLockControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 const playerHeight = 1;
@@ -423,7 +423,42 @@ async function init() {
     raycaster = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 0, - 1, 0 ), 0, playerHeight );
 
     let randomButton = document.getElementById("randomButton");
+    let forwardsButton = document.getElementById("forwardsButton");
+    let leftButton = document.getElementById("leftButton");
+    let backwardsButton = document.getElementById("backwardsButton");
+    let rightButton = document.getElementById("rightButton");
+    let jumpButton = document.getElementById("jumpButton");
     randomButton.addEventListener( 'click', loadRandomLevel);
+    forwardsButton.addEventListener( 'touchstart', () => { moveForward = true; });
+    forwardsButton.addEventListener( 'touchend', () => { moveForward = false; });
+    leftButton.addEventListener( 'touchstart', () => { moveLeft = true; });
+    leftButton.addEventListener( 'touchend', () => { moveLeft = false; });
+    backwardsButton.addEventListener( 'touchstart', () => { moveBackward = true; });
+    backwardsButton.addEventListener( 'touchend', () => { moveBackward = false; });
+    rightButton.addEventListener( 'touchstart', () => { moveRight = true; });
+    rightButton.addEventListener( 'touchend', () => { moveRight = false; });
+    jumpButton.addEventListener( 'click', () => { 
+        if ( canJump === true ) {
+            velocity.y += 8;
+        }
+        canJump = false;
+    });
+    jumpButton.addEventListener( 'dblclick', () => {
+        if ( canJump === true ) {
+            velocity.y += 16;
+        }
+        canJump = false;
+    });
+
+    let mobileControls = document.getElementById("mobile-controls");
+    let jumpControls = document.getElementById("jump-controls");
+    // mobile
+    if (( 'ontouchstart' in window ) || 
+    ( navigator.maxTouchPoints > 0 ) || 
+    ( navigator.msMaxTouchPoints > 0 )) {
+        mobileControls.style.display = "grid";
+        jumpControls.style.display = "grid";
+    }
 
     await initAttributes();
 
@@ -781,75 +816,71 @@ function animate() {
 
     let delta = clock.getDelta();
     
-    if ( controls.isLocked === true ) {
+    let speed = 80.0;
 
-        let speed = 80.0;
+    raycaster.ray.origin.copy( controls.getObject().position );
 
-        raycaster.ray.origin.copy( controls.getObject().position );
+    const intersections = raycaster.intersectObjects( objects, false );
 
-        const intersections = raycaster.intersectObjects( objects, false );
+    const onObject = intersections.length > 0;
 
-        const onObject = intersections.length > 0;
+    velocity.x -= velocity.x * 10.0 * delta;
+    velocity.z -= velocity.z * 10.0 * delta;
 
-        velocity.x -= velocity.x * 10.0 * delta;
-        velocity.z -= velocity.z * 10.0 * delta;
+    velocity.y -= 9.8 * 5.0 * delta; // 100.0 = mass
 
-        velocity.y -= 9.8 * 5.0 * delta; // 100.0 = mass
+    if ( onObject === true ) {
 
-        if ( onObject === true ) {
-
-            if ( intersections[0]?.object?.grabNodeData?.levelNodeStatic?.material == 9) {
-                velocity.y = Math.abs(velocity.y * 0.8);
-            }
-
-            velocity.y = Math.max( 0, velocity.y );
-            canJump = true;
-
-            if (intersections[0].point.y > controls.getObject().position.y - playerHeight / 2) {
-                velocity.y += 1.0;
-            }
-            if (intersections[0].point.y > controls.getObject().position.y - playerHeight / 3) {
-                controls.getObject().position.y = intersections[0].point.y + (playerHeight / 3) * 2;
-            }
-
-            for ( let i = 0; i < intersections.length; i++ ) {
-                if ( intersections[i]?.object?.grabNodeData?.levelNodeStatic?.material == 2) {
-                    canJump = false;
-                    speed *= 1.5;
-                }
-                if ( intersections[i]?.object?.grabNodeData?.levelNodeFinish && !isLoading ) {
-                    isLoading = true;
-                    loadRandomLevel();
-                }
-                if ( intersections[i]?.object?.grabNodeData?.levelNodeStatic?.material == 3 ) {
-                    camera.position.set(spawnPoint.x, spawnPoint.y, spawnPoint.z);
-                }
-            }
-
+        if ( intersections[0]?.object?.grabNodeData?.levelNodeStatic?.material == 9) {
+            velocity.y = Math.abs(velocity.y * 0.8);
         }
 
-        direction.z = Number( moveForward ) - Number( moveBackward );
-        direction.x = Number( moveRight ) - Number( moveLeft );
+        velocity.y = Math.max( 0, velocity.y );
+        canJump = true;
+
+        if (intersections[0].point.y > controls.getObject().position.y - playerHeight / 2) {
+            velocity.y += 1.0;
+        }
+        if (intersections[0].point.y > controls.getObject().position.y - playerHeight / 3) {
+            controls.getObject().position.y = intersections[0].point.y + (playerHeight / 3) * 2;
+        }
+
+        for ( let i = 0; i < intersections.length; i++ ) {
+            if ( intersections[i]?.object?.grabNodeData?.levelNodeStatic?.material == 2) {
+                canJump = false;
+                speed *= 1.5;
+            }
+            if ( intersections[i]?.object?.grabNodeData?.levelNodeFinish && !isLoading ) {
+                isLoading = true;
+                loadRandomLevel();
+            }
+            if ( intersections[i]?.object?.grabNodeData?.levelNodeStatic?.material == 3 ) {
+                camera.position.set(spawnPoint.x, spawnPoint.y, spawnPoint.z);
+            }
+        }
+
+    }
+
+    direction.z = Number( moveForward ) - Number( moveBackward );
+    direction.x = Number( moveRight ) - Number( moveLeft );
+    direction.normalize();
+
+    if ( moveForward || moveBackward ) velocity.z -= direction.z * speed * delta;
+    if ( moveLeft || moveRight ) velocity.x -= direction.x * speed * delta;
+
+    controls.moveRight( - velocity.x * delta );
+    controls.moveForward( - velocity.z * delta );
+
+    controls.getObject().position.y += ( velocity.y * delta );
+
+    // move player towards grappleTarget
+    if (grappleTarget) {
+        console.log(controls);
+        let direction = new THREE.Vector3();
+        direction.subVectors(grappleTarget, controls.getObject().position);
         direction.normalize();
-
-        if ( moveForward || moveBackward ) velocity.z -= direction.z * speed * delta;
-        if ( moveLeft || moveRight ) velocity.x -= direction.x * speed * delta;
-
-        controls.moveRight( - velocity.x * delta );
-        controls.moveForward( - velocity.z * delta );
-
-        controls.getObject().position.y += ( velocity.y * delta );
-
-        // move player towards grappleTarget
-        if (grappleTarget) {
-            console.log(controls);
-            let direction = new THREE.Vector3();
-            direction.subVectors(grappleTarget, controls.getObject().position);
-            direction.normalize();
-            camera.position.add(direction.multiplyScalar(30 * delta));
-            velocity.y = Math.max(0, velocity.y);
-        }
-
+        camera.position.add(direction.multiplyScalar(30 * delta));
+        velocity.y = Math.max(0, velocity.y);
     }
 
     for(let object of animatedObjects) {
@@ -919,7 +950,7 @@ function handleKeyUp(event) {
     }
 }
 
-function onWindowClick() {
+function onWindowClick(event) {
     if ( controls.isLocked === true ) {
         
         let ray = new THREE.Raycaster(camera.position, camera.getWorldDirection(new THREE.Vector3()));
@@ -936,7 +967,9 @@ function onWindowClick() {
             }
         }
     } else {
-        controls.lock();
+        if (event.target.tagName === "CANVAS") {
+            controls.lock();
+        }
     }
 }
 
